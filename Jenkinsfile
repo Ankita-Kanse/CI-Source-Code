@@ -9,9 +9,9 @@ pipeline {
     }
 
     stages {
-        stage('Clone Source Repo') {
+        stage('Clone Source Code') {
             steps {
-                checkout scm
+                git url: 'https://github.com/Ankita-Kanse/CI-Source-Code.git', branch: 'main'
             }
         }
 
@@ -54,24 +54,22 @@ pipeline {
             }
         }
 
-        stage('Update Deployment YAML in Git') {
+        stage('Update Deployment YAML in ArgoCD Repo') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'git-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                     sh '''
                     rm -rf ArgoCD
-                    git clone https://$GIT_USER:$GIT_PASS@${DEPLOY_REPO#https://}
+                    git clone https://$GIT_USER:$GIT_PASS@github.com/Ankita-Kanse/ArgoCD.git
                     cd ArgoCD
 
                     git config user.email "jenkins@demo.com"
                     git config user.name "Jenkins"
 
-                    git pull origin main
-                    git reset --hard
-
+                    # Replace image tag in deployment.yaml
                     sed -i "s|image: .*|image: public.ecr.aws/v7f8p0w8/cicd:$IMAGE_TAG|" k8s/deployment.yaml
 
                     git add k8s/deployment.yaml
-                    git commit -m "CI: Update image tag to $IMAGE_TAG"
+                    git commit -m "CD: Update image tag to $IMAGE_TAG"
                     git push origin main
                     '''
                 }
@@ -81,10 +79,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ CI/CD Pipeline completed. Image pushed and ArgoCD will auto-deploy.'
+            echo '✅ CI/CD pipeline completed. ArgoCD will sync the updated deployment.'
         }
         failure {
-            echo '❌ Build or deployment update failed.'
+            echo '❌ Pipeline failed. Check logs.'
         }
     }
 }
