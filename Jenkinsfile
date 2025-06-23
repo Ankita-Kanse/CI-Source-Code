@@ -9,7 +9,7 @@ pipeline {
     }
 
     stages {
-        stage('Clone Source Code') {
+        stage('Clone CI Source Code') {
             steps {
                 git url: 'https://github.com/Ankita-Kanse/CI-Source-Code.git', branch: 'main'
             }
